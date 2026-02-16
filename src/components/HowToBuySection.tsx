@@ -2,6 +2,7 @@
 import { motion } from 'framer-motion';
 import { useInView } from 'framer-motion';
 import { useRef, useState } from 'react';
+import { Icons } from '@/components/Icons';
 
 export default function HowToBuySection({ contractAddress = 'TBA' }: { contractAddress?: string }) {
   const ref = useRef(null);
@@ -91,7 +92,7 @@ export default function HowToBuySection({ contractAddress = 'TBA' }: { contractA
           <div className="ca-label">Contract Address</div>
           <div className="ca-address" onClick={copyToClipboard}>
             <span>{contractAddress}</span>
-            <span className="ca-copy-icon">{copied ? '✓' : '📋'}</span>
+            <span className="ca-copy-icon">{copied ? <Icons.Check /> : <Icons.Copy />}</span>
           </div>
           {copied && <p style={{ marginTop: '12px', color: 'var(--accent)', fontSize: '0.85rem' }}>Copied to clipboard!</p>}
         </motion.div>

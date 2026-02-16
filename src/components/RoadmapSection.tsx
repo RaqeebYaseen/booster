@@ -43,7 +43,7 @@ export default function RoadmapSection() {
             The Journey Ahead
           </h2>
           <p className="section-subtitle" style={{ margin: '20px auto 0' }}>
-            Our path to dominating the Solana ecosystem. Buckle up, it's going to be electric.
+            Our path to dominating the Solana ecosystem. Buckle up, it&apos;s going to be electric.
           </p>
         </motion.div>
 

@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { useInView } from 'framer-motion';
 import { useRef } from 'react';
 import Image from 'next/image';
+import { Icons } from '@/components/Icons';
 
 export default function AboutSection() {
   const ref = useRef(null);
@@ -38,8 +39,8 @@ export default function AboutSection() {
               The Energy Revolution on Solana
             </h2>
             <p className="section-subtitle">
-              $BOOST isn't just another memecoin — it's a movement. Born from the idea that crypto 
-              should be as electrifying as cracking open an ice-cold energy drink. We're bringing 
+              $BOOST isn&apos;t just another memecoin — it&apos;s a movement. Born from the idea that crypto 
+              should be as electrifying as cracking open an ice-cold energy drink. We&apos;re bringing 
               bold flavors, fierce community spirit, and unstoppable momentum to the Solana ecosystem.
             </p>
             <p className="section-subtitle" style={{ marginTop: '20px' }}>
@@ -49,19 +50,19 @@ export default function AboutSection() {
 
             <div className="about-features">
               <div className="about-feature">
-                <span className="about-feature-icon">⚡</span>
+                <span className="about-feature-icon"><Icons.Lightning /></span>
                 <span>Lightning Fast</span>
               </div>
               <div className="about-feature">
-                <span className="about-feature-icon">🔒</span>
+                <span className="about-feature-icon"><Icons.Lock /></span>
                 <span>LP Locked</span>
               </div>
               <div className="about-feature">
-                <span className="about-feature-icon">🚫</span>
+                <span className="about-feature-icon"><Icons.NoTax /></span>
                 <span>0% Tax</span>
               </div>
               <div className="about-feature">
-                <span className="about-feature-icon">🌐</span>
+                <span className="about-feature-icon"><Icons.Globe /></span>
                 <span>Community Owned</span>
               </div>
             </div>

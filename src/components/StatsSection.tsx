@@ -1,9 +1,9 @@
 'use client';
 import { motion } from 'framer-motion';
 import { useInView } from 'framer-motion';
-import { useRef, useEffect, useState } from 'react';
+import { useRef } from 'react';
 
-interface StatsData {
+export interface StatsData {
   marketCap: string;
   holders: string;
   price: string;
@@ -12,7 +12,7 @@ interface StatsData {
   liquidity: string;
 }
 
-export default function StatsSection({ stats }: { stats?: StatsData }) {
+export default function StatsSection({ stats }: { stats?: Partial<StatsData> }) {
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, margin: '-100px' });
 
@@ -25,7 +25,10 @@ export default function StatsSection({ stats }: { stats?: StatsData }) {
     liquidity: '$420K',
   };
 
-  const displayStats = stats || defaultStats;
+  const displayStats: StatsData = {
+    ...defaultStats,
+    ...(stats || {}),
+  };
 
   const statItems = [
     { label: 'Market Cap', value: displayStats.marketCap },

@@ -2,6 +2,7 @@
 import { motion } from 'framer-motion';
 import { useInView } from 'framer-motion';
 import { useRef } from 'react';
+import { Icons } from '@/components/Icons';
 
 interface SocialLinks {
   twitter?: string;
@@ -48,7 +49,7 @@ export default function CommunitySection({ socials }: { socials?: SocialLinks })
                 animate={isInView ? { opacity: 1, scale: 1 } : {}}
                 transition={{ duration: 0.6, delay: 0.2 }}
               >
-                <span>🐦</span>
+                <Icons.X />
                 <span>Twitter</span>
               </motion.a>
             )}
@@ -62,7 +63,7 @@ export default function CommunitySection({ socials }: { socials?: SocialLinks })
                 animate={isInView ? { opacity: 1, scale: 1 } : {}}
                 transition={{ duration: 0.6, delay: 0.3 }}
               >
-                <span>✈️</span>
+                <Icons.Telegram />
                 <span>Telegram</span>
               </motion.a>
             )}
@@ -76,7 +77,7 @@ export default function CommunitySection({ socials }: { socials?: SocialLinks })
                 animate={isInView ? { opacity: 1, scale: 1 } : {}}
                 transition={{ duration: 0.6, delay: 0.4 }}
               >
-                <span>💬</span>
+                <Icons.Discord />
                 <span>Discord</span>
               </motion.a>
             )}
@@ -89,7 +90,7 @@ export default function CommunitySection({ socials }: { socials?: SocialLinks })
             style={{ marginTop: '60px' }}
           >
             <a href="https://pump.fun" target="_blank" rel="noopener noreferrer" className="btn-primary" style={{ fontSize: '1rem', padding: '22px 50px' }}>
-              🚀 Buy $BOOST Now
+              <Icons.Rocket /> Buy $BOOST Now
             </a>
           </motion.div>
         </motion.div>

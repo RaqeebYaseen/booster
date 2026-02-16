@@ -37,7 +37,7 @@ export default function Navbar() {
             <li><a onClick={() => scrollToSection('roadmap')}>Roadmap</a></li>
             <li><a onClick={() => scrollToSection('howtobuy')}>How to Buy</a></li>
             <li><a onClick={() => scrollToSection('community')}>Community</a></li>
-            <li><a href="https://pump.fun" target="_blank" rel="noopener noreferrer" className="navbar-cta">Buy $BOOST</a></li>
+            <li><a href="https://pump.fun" target="_blank" rel="noopener noreferrer" className="btn-primary navbar-cta">Buy $BOOST</a></li>
           </ul>
 
           <button className="hamburger" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
