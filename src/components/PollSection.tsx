@@ -1,9 +1,7 @@
 'use client';
 
 import { motion, useInView } from 'framer-motion';
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { db } from '@/lib/firebase';
-import { doc, getDoc, increment, updateDoc } from 'firebase/firestore';
+import { useMemo, useRef } from 'react';
 
 export type PollOption = {
   id: string;
@@ -14,26 +12,19 @@ export type PollOption = {
 export type PollData = {
   title: string;
   question: string;
-  options: PollOption[];
   statusText: string;
   endsText: string;
-};
-
-type SiteSettingsDoc = {
-  poll?: {
-    options?: Array<{ id?: unknown; label?: unknown; votes?: unknown }>;
-  };
+  optionA: PollOption;
+  optionB: PollOption;
 };
 
 const DEFAULT_POLL: PollData = {
   title: 'FINAL RESULTS',
   question: 'DEX Update payment should come in harmony with fees, or should it not?',
-  options: [
-    { id: 'opt1', label: 'Christmas DEX for free', votes: 2 },
-    { id: 'opt2', label: 'DEX Update from fees converted', votes: 3 },
-  ],
   statusText: '5 votes • Final results',
   endsText: '',
+  optionA: { id: 'optionA', label: 'Christmas DEX for free', votes: 2 },
+  optionB: { id: 'optionB', label: 'DEX Update from fees converted', votes: 3 },
 };
 
 function safePercent(v: number, total: number) {
@@ -47,71 +38,23 @@ export default function PollSection({ poll }: { poll?: Partial<PollData> }) {
 
   const merged: PollData = useMemo(() => {
     const base: PollData = { ...DEFAULT_POLL, ...(poll || {}) } as PollData;
-    const options = (poll?.options && poll.options.length ? poll.options : DEFAULT_POLL.options).map((o, idx) => ({
-      id: o.id || `opt${idx + 1}`,
-      label: o.label || DEFAULT_POLL.options[idx]?.label || `Option ${idx + 1}`,
-      votes: typeof o.votes === 'number' ? o.votes : 0,
-    }));
-
     return {
       ...base,
-      options,
+      optionA: {
+        id: base.optionA?.id || 'optionA',
+        label: base.optionA?.label || DEFAULT_POLL.optionA.label,
+        votes: typeof base.optionA?.votes === 'number' ? base.optionA.votes : 0,
+      },
+      optionB: {
+        id: base.optionB?.id || 'optionB',
+        label: base.optionB?.label || DEFAULT_POLL.optionB.label,
+        votes: typeof base.optionB?.votes === 'number' ? base.optionB.votes : 0,
+      },
     };
   }, [poll]);
 
-  const [selectedId, setSelectedId] = useState<string>('');
-  const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState('');
-  const [localVoted, setLocalVoted] = useState(false);
-
-  const totalVotes = merged.options.reduce((sum, o) => sum + (o.votes || 0), 0);
-
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const key = 'boost_poll_voted_v1';
-    setLocalVoted(window.localStorage.getItem(key) === '1');
-  }, []);
-
-  const submitVote = async () => {
-    setError('');
-    if (!selectedId) {
-      setError('Select an option first.');
-      return;
-    }
-
-    if (localVoted) {
-      setError('You already voted.');
-      return;
-    }
-
-    setSubmitting(true);
-
-    try {
-      const settingsRef = doc(db, 'settings', 'site');
-      const snap = await getDoc(settingsRef);
-      if (!snap.exists()) throw new Error('Settings not found');
-
-      const data = snap.data() as unknown as SiteSettingsDoc;
-      const currentOptions = Array.isArray(data?.poll?.options) ? data.poll.options : [];
-      const idx = currentOptions.findIndex((o) => o?.id === selectedId);
-      if (idx < 0) throw new Error('Option not found');
-
-      await updateDoc(settingsRef, {
-        [`poll.options.${idx}.votes`]: increment(1),
-      });
-
-      if (typeof window !== 'undefined') {
-        window.localStorage.setItem('boost_poll_voted_v1', '1');
-      }
-
-      setLocalVoted(true);
-      setSelectedId('');
-    } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : 'Failed to vote');
-    } finally {
-      setSubmitting(false);
-    }
-  };
+  const options = [merged.optionA, merged.optionB];
+  const totalVotes = options.reduce((sum, o) => sum + (o.votes || 0), 0);
 
   return (
     <section id="poll" className="poll-section" ref={ref}>
@@ -142,16 +85,12 @@ export default function PollSection({ poll }: { poll?: Partial<PollData> }) {
           </div>
 
           <div className="poll-options">
-            {merged.options.map((opt) => {
+            {options.map((opt) => {
               const percent = safePercent(opt.votes || 0, totalVotes);
-              const isSelected = selectedId === opt.id;
               return (
-                <button
+                <div
                   key={opt.id}
-                  className={`poll-option ${isSelected ? 'selected' : ''}`}
-                  onClick={() => setSelectedId(opt.id)}
-                  type="button"
-                  disabled={submitting || localVoted}
+                  className="poll-option"
                 >
                   <div className="poll-option-row">
                     <span className="poll-option-label">{opt.label}</span>
@@ -160,17 +99,9 @@ export default function PollSection({ poll }: { poll?: Partial<PollData> }) {
                   <div className="poll-option-track">
                     <div className="poll-option-fill" style={{ width: `${percent}%` }} />
                   </div>
-                </button>
+                </div>
               );
             })}
-          </div>
-
-          {error && <div className="poll-error">{error}</div>}
-
-          <div className="poll-actions">
-            <button className="btn-primary" onClick={submitVote} disabled={submitting || localVoted}>
-              {localVoted ? 'Voted' : submitting ? 'Submitting...' : 'Vote'}
-            </button>
           </div>
         </motion.div>
       </div>

@@ -8,32 +8,45 @@ interface SiteData {
   contractAddress: string;
   pumpFunLink: string;
   liveStats: {
-    totalFeesConverted: string;
-    feesDelta24h: string;
-    boostsPurchased: string;
-    nextBoostProgress: number;
-    nextBoostNeededLabel: string;
+    totalFeesConvertedSol: number;
+    feesDelta24hSol: number;
+    boostsPurchased: number;
+    nextBoostCurrentSol: number;
+    nextBoostTargetSol: number;
   };
   poll: {
     title: string;
     question: string;
     statusText: string;
     endsText: string;
-    options: Array<{ id: string; label: string; votes: number }>;
-  };
-  stats: {
-    marketCap: string;
-    holders: string;
-    price: string;
-    volume24h: string;
-    totalSupply: string;
-    liquidity: string;
+    optionA: { label: string; votes: number };
+    optionB: { label: string; votes: number };
   };
   socials: {
     twitter: string;
     telegram: string;
     discord: string;
   };
+}
+
+function Stepper({ value, onChange, step = 1 }: { value: number; onChange: (v: number) => void; step?: number }) {
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: '44px 1fr 44px', gap: 10, alignItems: 'center' }}>
+      <button type="button" className="btn-outline" onClick={() => onChange(Math.max(0, value - step))} style={{ padding: 0, height: 44, justifyContent: 'center' }}>
+        -
+      </button>
+      <input
+        type="number"
+        className="admin-input"
+        value={value}
+        step={step}
+        onChange={(e) => onChange(Number(e.target.value))}
+      />
+      <button type="button" className="btn-outline" onClick={() => onChange(value + step)} style={{ padding: 0, height: 44, justifyContent: 'center' }}>
+        +
+      </button>
+    </div>
+  );
 }
 
 export default function AdminPage() {
@@ -46,29 +59,19 @@ export default function AdminPage() {
     contractAddress: 'TBA',
     pumpFunLink: 'https://pump.fun',
     liveStats: {
-      totalFeesConverted: '0.2 SOL',
-      feesDelta24h: '+0.2 in last 24h',
-      boostsPurchased: '40x boosts',
-      nextBoostProgress: 0.2,
-      nextBoostNeededLabel: '1 SOL needed',
+      totalFeesConvertedSol: 0.2,
+      feesDelta24hSol: 0.2,
+      boostsPurchased: 40,
+      nextBoostCurrentSol: 0.2,
+      nextBoostTargetSol: 1,
     },
     poll: {
       title: 'FINAL RESULTS',
       question: 'DEX Update payment should come in harmony with fees, or should it not?',
       statusText: '5 votes • Final results',
       endsText: '',
-      options: [
-        { id: 'opt1', label: 'Christmas DEX for free', votes: 2 },
-        { id: 'opt2', label: 'DEX Update from fees converted', votes: 3 },
-      ],
-    },
-    stats: {
-      marketCap: '$2.4M',
-      holders: '8,420',
-      price: '$0.0024',
-      volume24h: '$580K',
-      totalSupply: '1B',
-      liquidity: '$420K',
+      optionA: { label: 'Christmas DEX for free', votes: 2 },
+      optionB: { label: 'DEX Update from fees converted', votes: 3 },
     },
     socials: {
       twitter: 'https://twitter.com',
@@ -81,6 +84,7 @@ export default function AdminPage() {
     if (authenticated) {
       fetchSiteData();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [authenticated]);
 
   const fetchSiteData = async () => {
@@ -88,7 +92,32 @@ export default function AdminPage() {
       const docRef = doc(db, 'settings', 'site');
       const docSnap = await getDoc(docRef);
       if (docSnap.exists()) {
-        setSiteData(docSnap.data() as SiteData);
+        const fetchedData = docSnap.data() as Partial<SiteData>;
+        const mergedData: SiteData = {
+          contractAddress: fetchedData.contractAddress ?? siteData.contractAddress,
+          pumpFunLink: fetchedData.pumpFunLink ?? siteData.pumpFunLink,
+          liveStats: {
+            totalFeesConvertedSol: fetchedData.liveStats?.totalFeesConvertedSol ?? siteData.liveStats.totalFeesConvertedSol,
+            feesDelta24hSol: fetchedData.liveStats?.feesDelta24hSol ?? siteData.liveStats.feesDelta24hSol,
+            boostsPurchased: fetchedData.liveStats?.boostsPurchased ?? siteData.liveStats.boostsPurchased,
+            nextBoostCurrentSol: fetchedData.liveStats?.nextBoostCurrentSol ?? siteData.liveStats.nextBoostCurrentSol,
+            nextBoostTargetSol: fetchedData.liveStats?.nextBoostTargetSol ?? siteData.liveStats.nextBoostTargetSol,
+          },
+          poll: {
+            title: fetchedData.poll?.title ?? siteData.poll.title,
+            question: fetchedData.poll?.question ?? siteData.poll.question,
+            statusText: fetchedData.poll?.statusText ?? siteData.poll.statusText,
+            endsText: fetchedData.poll?.endsText ?? siteData.poll.endsText,
+            optionA: fetchedData.poll?.optionA ?? siteData.poll.optionA,
+            optionB: fetchedData.poll?.optionB ?? siteData.poll.optionB,
+          },
+          socials: {
+            twitter: fetchedData.socials?.twitter ?? siteData.socials.twitter,
+            telegram: fetchedData.socials?.telegram ?? siteData.socials.telegram,
+            discord: fetchedData.socials?.discord ?? siteData.socials.discord,
+          },
+        };
+        setSiteData(mergedData);
       }
     } catch (err) {
       console.error('Error fetching site data:', err);
@@ -134,13 +163,6 @@ export default function AdminPage() {
     }
   };
 
-  const updateStats = (key: string, value: string) => {
-    setSiteData(prev => ({
-      ...prev,
-      stats: { ...prev.stats, [key]: value }
-    }));
-  };
-
   const updateSocials = (key: string, value: string) => {
     setSiteData(prev => ({
       ...prev,
@@ -148,26 +170,31 @@ export default function AdminPage() {
     }));
   };
 
-  const updateLiveStats = (key: string, value: string | number) => {
+  const updateLiveStats = (key: keyof SiteData['liveStats'], value: number) => {
     setSiteData(prev => ({
       ...prev,
       liveStats: { ...prev.liveStats, [key]: value }
     }));
   };
 
-  const updatePoll = (key: keyof SiteData['poll'], value: string) => {
+  const updatePoll = (key: 'title' | 'question' | 'statusText' | 'endsText', value: string) => {
     setSiteData(prev => ({
       ...prev,
       poll: { ...prev.poll, [key]: value }
     }));
   };
 
-  const updatePollOption = (index: number, key: 'label' | 'votes' | 'id', value: string | number) => {
-    setSiteData(prev => {
-      const next = [...prev.poll.options];
-      next[index] = { ...next[index], [key]: value };
-      return { ...prev, poll: { ...prev.poll, options: next } };
-    });
+  const updatePollOption = (which: 'optionA' | 'optionB', key: 'label' | 'votes', value: string | number) => {
+    setSiteData(prev => ({
+      ...prev,
+      poll: {
+        ...prev.poll,
+        [which]: {
+          ...prev.poll[which],
+          [key]: value,
+        },
+      },
+    }));
   };
 
   if (!authenticated) {
@@ -188,107 +215,6 @@ export default function AdminPage() {
               {loading ? 'Authenticating...' : 'Login'}
             </button>
           </form>
-        </div>
-
-        <div className="admin-group glass-card">
-          <h2>Live Stats Section</h2>
-          <div className="admin-field">
-            <label>Total Fees Converted</label>
-            <input
-              type="text"
-              className="admin-input"
-              value={siteData.liveStats.totalFeesConverted}
-              onChange={(e) => updateLiveStats('totalFeesConverted', e.target.value)}
-            />
-          </div>
-          <div className="admin-field">
-            <label>Fees Delta (small text)</label>
-            <input
-              type="text"
-              className="admin-input"
-              value={siteData.liveStats.feesDelta24h}
-              onChange={(e) => updateLiveStats('feesDelta24h', e.target.value)}
-            />
-          </div>
-          <div className="admin-field">
-            <label>Boosts Purchased</label>
-            <input
-              type="text"
-              className="admin-input"
-              value={siteData.liveStats.boostsPurchased}
-              onChange={(e) => updateLiveStats('boostsPurchased', e.target.value)}
-            />
-          </div>
-          <div className="admin-field">
-            <label>Next Boost Progress (0 to 1)</label>
-            <input
-              type="number"
-              step="0.1"
-              className="admin-input"
-              value={siteData.liveStats.nextBoostProgress}
-              onChange={(e) => updateLiveStats('nextBoostProgress', Number(e.target.value))}
-            />
-          </div>
-          <div className="admin-field">
-            <label>Next Boost Needed Label</label>
-            <input
-              type="text"
-              className="admin-input"
-              value={siteData.liveStats.nextBoostNeededLabel}
-              onChange={(e) => updateLiveStats('nextBoostNeededLabel', e.target.value)}
-            />
-          </div>
-        </div>
-
-        <div className="admin-group glass-card">
-          <h2>Poll Section</h2>
-          <div className="admin-field">
-            <label>Poll Title</label>
-            <input
-              type="text"
-              className="admin-input"
-              value={siteData.poll.title}
-              onChange={(e) => updatePoll('title', e.target.value)}
-            />
-          </div>
-          <div className="admin-field">
-            <label>Poll Question</label>
-            <input
-              type="text"
-              className="admin-input"
-              value={siteData.poll.question}
-              onChange={(e) => updatePoll('question', e.target.value)}
-            />
-          </div>
-          <div className="admin-field">
-            <label>Status Text</label>
-            <input
-              type="text"
-              className="admin-input"
-              value={siteData.poll.statusText}
-              onChange={(e) => updatePoll('statusText', e.target.value)}
-            />
-          </div>
-
-          {siteData.poll.options.map((opt, idx) => (
-            <div key={opt.id || idx} className="admin-field">
-              <label>Option {idx + 1}</label>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 120px', gap: 12 }}>
-                <input
-                  type="text"
-                  className="admin-input"
-                  value={opt.label}
-                  onChange={(e) => updatePollOption(idx, 'label', e.target.value)}
-                />
-                <input
-                  type="number"
-                  className="admin-input"
-                  value={opt.votes}
-                  onChange={(e) => updatePollOption(idx, 'votes', Number(e.target.value))}
-                />
-              </div>
-            </div>
-          ))}
         </div>
       </div>
     );
@@ -325,60 +251,60 @@ export default function AdminPage() {
         </div>
 
         <div className="admin-group glass-card">
-          <h2>Token Stats</h2>
+          <h2>Live Stats Section</h2>
           <div className="admin-field">
-            <label>Market Cap</label>
-            <input
-              type="text"
-              className="admin-input"
-              value={siteData.stats.marketCap}
-              onChange={(e) => updateStats('marketCap', e.target.value)}
-            />
+            <label>Total Fees Converted (SOL)</label>
+            <Stepper value={siteData.liveStats.totalFeesConvertedSol} step={0.1} onChange={(v) => updateLiveStats('totalFeesConvertedSol', v)} />
           </div>
           <div className="admin-field">
-            <label>Holders</label>
-            <input
-              type="text"
-              className="admin-input"
-              value={siteData.stats.holders}
-              onChange={(e) => updateStats('holders', e.target.value)}
-            />
+            <label>Fees Delta (SOL) - last 24h</label>
+            <Stepper value={siteData.liveStats.feesDelta24hSol} step={0.1} onChange={(v) => updateLiveStats('feesDelta24hSol', v)} />
           </div>
           <div className="admin-field">
-            <label>Price</label>
-            <input
-              type="text"
-              className="admin-input"
-              value={siteData.stats.price}
-              onChange={(e) => updateStats('price', e.target.value)}
-            />
+            <label>Boosts Purchased (count)</label>
+            <Stepper value={siteData.liveStats.boostsPurchased} step={1} onChange={(v) => updateLiveStats('boostsPurchased', v)} />
           </div>
           <div className="admin-field">
-            <label>24h Volume</label>
-            <input
-              type="text"
-              className="admin-input"
-              value={siteData.stats.volume24h}
-              onChange={(e) => updateStats('volume24h', e.target.value)}
-            />
+            <label>Next Boost Current (SOL)</label>
+            <Stepper value={siteData.liveStats.nextBoostCurrentSol} step={0.1} onChange={(v) => updateLiveStats('nextBoostCurrentSol', v)} />
           </div>
           <div className="admin-field">
-            <label>Total Supply</label>
-            <input
-              type="text"
-              className="admin-input"
-              value={siteData.stats.totalSupply}
-              onChange={(e) => updateStats('totalSupply', e.target.value)}
-            />
+            <label>Next Boost Target (SOL)</label>
+            <Stepper value={siteData.liveStats.nextBoostTargetSol} step={0.1} onChange={(v) => updateLiveStats('nextBoostTargetSol', v)} />
+          </div>
+        </div>
+
+        <div className="admin-group glass-card">
+          <h2>Poll Section</h2>
+          <div className="admin-field">
+            <label>Poll Title</label>
+            <input type="text" className="admin-input" value={siteData.poll.title} onChange={(e) => updatePoll('title', e.target.value)} />
           </div>
           <div className="admin-field">
-            <label>Liquidity</label>
-            <input
-              type="text"
-              className="admin-input"
-              value={siteData.stats.liquidity}
-              onChange={(e) => updateStats('liquidity', e.target.value)}
-            />
+            <label>Poll Question</label>
+            <input type="text" className="admin-input" value={siteData.poll.question} onChange={(e) => updatePoll('question', e.target.value)} />
+          </div>
+          <div className="admin-field">
+            <label>Status Text</label>
+            <input type="text" className="admin-input" value={siteData.poll.statusText} onChange={(e) => updatePoll('statusText', e.target.value)} />
+          </div>
+
+          <div className="admin-field">
+            <label>Option A Label</label>
+            <input type="text" className="admin-input" value={siteData.poll.optionA.label} onChange={(e) => updatePollOption('optionA', 'label', e.target.value)} />
+          </div>
+          <div className="admin-field">
+            <label>Option A Votes</label>
+            <Stepper value={siteData.poll.optionA.votes} step={1} onChange={(v) => updatePollOption('optionA', 'votes', v)} />
+          </div>
+
+          <div className="admin-field">
+            <label>Option B Label</label>
+            <input type="text" className="admin-input" value={siteData.poll.optionB.label} onChange={(e) => updatePollOption('optionB', 'label', e.target.value)} />
+          </div>
+          <div className="admin-field">
+            <label>Option B Votes</label>
+            <Stepper value={siteData.poll.optionB.votes} step={1} onChange={(v) => updatePollOption('optionB', 'votes', v)} />
           </div>
         </div>
 

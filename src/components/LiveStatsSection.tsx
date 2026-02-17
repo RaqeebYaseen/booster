@@ -4,11 +4,11 @@ import { motion, useInView } from 'framer-motion';
 import { useRef } from 'react';
 
 export type LiveStatsData = {
-  totalFeesConverted: string;
-  feesDelta24h: string;
-  boostsPurchased: string;
-  nextBoostProgress: number;
-  nextBoostNeededLabel: string;
+  totalFeesConvertedSol: number;
+  feesDelta24hSol: number;
+  boostsPurchased: number;
+  nextBoostCurrentSol: number;
+  nextBoostTargetSol: number;
 };
 
 export default function LiveStatsSection({ liveStats }: { liveStats?: Partial<LiveStatsData> }) {
@@ -16,20 +16,26 @@ export default function LiveStatsSection({ liveStats }: { liveStats?: Partial<Li
   const isInView = useInView(ref, { once: true, margin: '-100px' });
 
   const defaults: LiveStatsData = {
-    totalFeesConverted: '0.2 SOL',
-    feesDelta24h: '+0.2 in last 24h',
-    boostsPurchased: '40x boosts',
-    nextBoostProgress: 0.2,
-    nextBoostNeededLabel: '1 SOL needed',
+    totalFeesConvertedSol: 0.2,
+    feesDelta24hSol: 0.2,
+    boostsPurchased: 40,
+    nextBoostCurrentSol: 0.2,
+    nextBoostTargetSol: 1,
   };
 
   const data: LiveStatsData = {
     ...defaults,
     ...(liveStats || {}),
-    nextBoostProgress: typeof liveStats?.nextBoostProgress === 'number' ? liveStats.nextBoostProgress : defaults.nextBoostProgress,
+    totalFeesConvertedSol: typeof liveStats?.totalFeesConvertedSol === 'number' ? liveStats.totalFeesConvertedSol : defaults.totalFeesConvertedSol,
+    feesDelta24hSol: typeof liveStats?.feesDelta24hSol === 'number' ? liveStats.feesDelta24hSol : defaults.feesDelta24hSol,
+    boostsPurchased: typeof liveStats?.boostsPurchased === 'number' ? liveStats.boostsPurchased : defaults.boostsPurchased,
+    nextBoostCurrentSol: typeof liveStats?.nextBoostCurrentSol === 'number' ? liveStats.nextBoostCurrentSol : defaults.nextBoostCurrentSol,
+    nextBoostTargetSol: typeof liveStats?.nextBoostTargetSol === 'number' ? liveStats.nextBoostTargetSol : defaults.nextBoostTargetSol,
   };
 
-  const progressClamped = Math.max(0, Math.min(1, data.nextBoostProgress));
+  const target = data.nextBoostTargetSol > 0 ? data.nextBoostTargetSol : 1;
+  const progressRaw = data.nextBoostCurrentSol / target;
+  const progressClamped = Math.max(0, Math.min(1, progressRaw));
 
   return (
     <section id="stats" className="live-stats-section" ref={ref}>
@@ -53,8 +59,8 @@ export default function LiveStatsSection({ liveStats }: { liveStats?: Partial<Li
             transition={{ duration: 0.7, delay: 0.05 }}
           >
             <div className="live-stat-label">Total Fees Converted</div>
-            <div className="live-stat-value live-stat-value--accent">{data.totalFeesConverted}</div>
-            <div className="live-stat-sub">{data.feesDelta24h}</div>
+            <div className="live-stat-value live-stat-value--accent">{data.totalFeesConvertedSol.toFixed(1)} SOL</div>
+            <div className="live-stat-sub">+{data.feesDelta24hSol.toFixed(1)} in last 24h</div>
           </motion.div>
 
           <motion.div
@@ -64,7 +70,7 @@ export default function LiveStatsSection({ liveStats }: { liveStats?: Partial<Li
             transition={{ duration: 0.7, delay: 0.12 }}
           >
             <div className="live-stat-label">Boosts Purchased</div>
-            <div className="live-stat-value live-stat-value--accent">{data.boostsPurchased}</div>
+            <div className="live-stat-value live-stat-value--accent">{data.boostsPurchased}x boosts</div>
           </motion.div>
 
           <motion.div
@@ -74,11 +80,11 @@ export default function LiveStatsSection({ liveStats }: { liveStats?: Partial<Li
             transition={{ duration: 0.7, delay: 0.19 }}
           >
             <div className="live-stat-label">Next Boost Progress</div>
-            <div className="live-stat-value live-stat-value--accent">{progressClamped.toFixed(1)}</div>
+            <div className="live-stat-value live-stat-value--accent">{Math.round(progressClamped * 100)}%</div>
             <div className="live-progress">
               <div className="live-progress-bar" style={{ width: `${progressClamped * 100}%` }} />
             </div>
-            <div className="live-stat-sub">{data.nextBoostNeededLabel}</div>
+            <div className="live-stat-sub">{data.nextBoostTargetSol.toFixed(1)} SOL target</div>
           </motion.div>
         </div>
       </div>
